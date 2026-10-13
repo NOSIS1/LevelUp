@@ -1,0 +1,1 @@
+& "$PSScriptRoot\launch.ps1"
