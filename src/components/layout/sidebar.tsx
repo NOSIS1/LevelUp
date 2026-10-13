@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { APP_VERSION } from '@/lib/app-info';
 import {
   Home,
   BookOpen,
@@ -86,7 +87,7 @@ export function Sidebar() {
         <div className="border-t border-border p-4">
           <div className="rounded-lg bg-secondary/50 p-3">
             <p className="text-xs text-muted-foreground">
-              Версия 1.0.0
+              Версия {APP_VERSION}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               © 2026 LevelUp
