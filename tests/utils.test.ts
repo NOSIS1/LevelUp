@@ -19,6 +19,7 @@ import { activityLevel, buildCalendarMonth, calendarWeeks } from '@/lib/calendar
 import { achievementProgress, isAchievementUnlocked, type AchievementMetrics } from '@/lib/achievement-service';
 import { parseLeetCodeStats, solvedPercent, validateLeetCodeUsername } from '@/lib/leetcode-adapter';
 import { aggregateGitHubEvents, fetchGitHubContributionCalendar, parseContributionCalendar, parseGitHubRepos, validateGitHubUsername } from '@/lib/github-adapter';
+import { buildDataBackup, parseDataBackup } from '@/lib/data-transfer';
 import { isAutoTrackedQuest, isQuestCompletable, questCompletionReward, questProgressPercent, questWindow } from '@/lib/quest-service';
 import { elapsedFocusMinutes, formatTimer, normalizeFocusState, pauseFocusTimer, remainingSeconds, startFocusTimer, type FocusTimerState } from '@/lib/focus-timer';
 
@@ -400,5 +401,24 @@ describe('GitHub public adapter', () => {
   it('requires a server token for official contributions and handles rate limits', async () => {
     await expect(fetchGitHubContributionCalendar('octocat', undefined, async () => new Response('{}'))).rejects.toThrow('GITHUB_TOKEN');
     await expect(fetchGitHubContributionCalendar('octocat', 'server-token', async () => new Response('', { status: 403, headers: { 'x-ratelimit-remaining': '0' } }))).rejects.toThrow('rate limit');
+  });
+});
+
+describe('data backup import/export validation', () => {
+  const tableNames = ['profile', 'sessions'];
+  const columns = { profile: ['id', 'name'], sessions: ['id', 'minutes'] };
+  it('round-trips a versioned export with allowed tables and columns', () => {
+    const backup = buildDataBackup({ profile: [{ id: 1, name: 'Ada' }], sessions: [{ id: 3, minutes: 25 }] }, new Date('2026-10-13T00:00:00Z'));
+    expect(parseDataBackup(JSON.stringify(backup), tableNames, columns)).toEqual(backup);
+  });
+  it('rejects incompatible table sets and unknown columns', () => {
+    const base = { format: 'levelup-sqlite-json', version: 1, exportedAt: '2026-10-13T00:00:00.000Z', tables: { profile: [], sessions: [] } };
+    expect(() => parseDataBackup(JSON.stringify({ ...base, tables: { wrong: [] } }), tableNames, columns)).toThrow('tables do not match');
+    expect(() => parseDataBackup(JSON.stringify({ ...base, tables: { profile: [{ id: 1, secret: 'x' }], sessions: [] } }), tableNames, columns)).toThrow('Unexpected column');
+    expect(() => parseDataBackup(JSON.stringify({ ...base, tables: { profile: [{ id: 1 }], sessions: [] } }), tableNames, columns)).toThrow('Missing column');
+  });
+  it('rejects malformed and oversized JSON', () => {
+    expect(() => parseDataBackup('{', tableNames, columns)).toThrow('valid JSON');
+    expect(() => parseDataBackup('x'.repeat(25 * 1024 * 1024 + 1), tableNames, columns)).toThrow('25 MB');
   });
 });
