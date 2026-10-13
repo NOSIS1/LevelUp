@@ -23,10 +23,14 @@ export function DataTransfer() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `levelup-export-${new Date().toISOString().slice(0, 10)}.json`;
+      const filename = `levelup-export-${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = filename;
+      link.hidden = true;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
-      setNotice('JSON-экспорт скачан. Храните его в приватном месте.');
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setNotice(`Экспорт скачан: ${filename}. Обычно браузер сохраняет его в папку «Загрузки»; нажмите Ctrl+J (Windows/Linux) или ⌘+Option+L (macOS), чтобы найти файл. Если включён вопрос о месте сохранения, проверьте выбранную папку.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось экспортировать данные'); }
   }
 
@@ -58,5 +62,5 @@ export function DataTransfer() {
     });
   }
 
-  return <Card><CardHeader><CardTitle>Экспорт и восстановление</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">Экспорт содержит учебный профиль, сессии, заметки, слова, проекты, квесты и историю XP. Файл персональный: он может содержать приватные заметки и должен храниться безопасно. Перед импортом JSON проверяется, а текущая база сохраняется в safety-копию.</p><div className="flex flex-wrap gap-3"><Button onClick={() => void downloadBackup()} disabled={pending}><Download className="mr-2 h-4 w-4" />Экспортировать JSON</Button><Button variant="outline" onClick={() => fileInput.current?.click()} disabled={pending}><Upload className="mr-2 h-4 w-4" />Восстановить JSON</Button><input ref={fileInput} type="file" accept="application/json,.json" className="hidden" aria-label="Файл резервной копии JSON" onChange={(event) => restore(event.target.files?.[0])} /></div>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="break-words text-sm text-green-500">{notice}</p>}</CardContent></Card>;
+  return <Card><CardHeader><CardTitle>Экспорт и восстановление</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">Экспорт содержит учебный профиль, сессии, заметки, слова, проекты, квесты и историю XP. Файл персональный: он может содержать приватные заметки и должен храниться безопасно. Перед импортом JSON проверяется, а текущая база сохраняется в safety-копию.</p><p className="rounded-md border border-border bg-secondary/40 p-3 text-sm">После экспорта ищите файл <code>levelup-export-ГГГГ-ММ-ДД.json</code> в папке «Загрузки». В браузере его также можно найти в списке загрузок: <kbd className="rounded border px-1">Ctrl</kbd>+<kbd className="rounded border px-1">J</kbd> (Windows/Linux) или <kbd className="rounded border px-1">⌘</kbd>+<kbd className="rounded border px-1">Option</kbd>+<kbd className="rounded border px-1">L</kbd> (macOS). Если браузер спрашивает место сохранения, файл находится в выбранной вами папке.</p><div className="flex flex-wrap gap-3"><Button onClick={() => void downloadBackup()} disabled={pending}><Download className="mr-2 h-4 w-4" />Экспортировать JSON</Button><Button variant="outline" onClick={() => fileInput.current?.click()} disabled={pending}><Upload className="mr-2 h-4 w-4" />Восстановить JSON</Button><input ref={fileInput} type="file" accept="application/json,.json" className="hidden" aria-label="Файл резервной копии JSON" onChange={(event) => restore(event.target.files?.[0])} /></div>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="break-words text-sm text-green-500">{notice}</p>}</CardContent></Card>;
 }
