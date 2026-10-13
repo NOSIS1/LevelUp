@@ -158,11 +158,12 @@ npm audit --omit=dev
 
 GitHub Actions запускает install, DB schema, type-check, тесты и production build на **Windows, macOS и Ubuntu**.
 
-Полный `npm audit` может показывать предупреждения в dev-only Tailwind 3 / Drizzle Kit транзитивных зависимостях. `npm audit --omit=dev` проверяет production runtime; major upgrades не выполняются автоматически без тестов миграции.
+`npm audit --omit=dev` проверяет production runtime. Полный `npm audit` может показывать moderate advisories в dev-only Drizzle Kit/esbuild цепочке; npm предлагает несовместимый откат Drizzle Kit на старую версию. Он не применяется автоматически; эти dev-only advisories отслеживаются отдельно.
 
 ### Архитектура
 
 - Next.js App Router 15, React 18, TypeScript strict.
+- Tailwind CSS 4 через официальный PostCSS plugin.
 - SQLite + Drizzle ORM; данные остаются локальными.
 - Zod на границах ввода, Vitest для бизнес-логики.
 - Интеграции изолированы адаптерами; внешние метрики не смешиваются с ручными фактами.

@@ -13,4 +13,4 @@ Please do not open a public issue for an exploitable vulnerability. Contact the 
 
 ## Dependency audit status
 
-The production dependency audit (`npm audit --omit=dev`) is part of CI. The development toolchain currently includes advisories in Tailwind CSS 3 / Drizzle Kit transitive packages; npm's suggested automatic fixes require major upgrades (Tailwind CSS 4 and a Drizzle Kit beta). These are not auto-applied because they may break the current styling/database workflow; schedule and test that migration separately.
+The production dependency audit (`npm audit --omit=dev`) is part of CI. Tailwind CSS 4 is used. The remaining full-audit advisories are moderate and limited to the Drizzle Kit/esbuild development dependency chain; npm suggests reverting Drizzle Kit to an older major version. That downgrade is not applied automatically because it may affect schema tooling; track and test a compatible Drizzle Kit upgrade separately.
