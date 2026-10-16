@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { LazySkillRadar } from '@/components/skills/lazy-skill-radar';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
@@ -234,6 +235,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <LazySkillRadar skills={skills.filter((skill) => skill.category === 'programming').map((skill) => ({ id: skill.id, name: skill.name, activityScore: skill.activityScore || 0, practiceScore: skill.practiceScore || 0, assessmentScore: skill.assessmentScore || 0, confidenceScore: skill.confidenceScore || 0, consistencyScore: skill.consistencyScore || 0 }))} title="Radar навыков программирования" />
 
       {/* Recent Activity */}
       <Card>

@@ -16,6 +16,7 @@ import { buildDailyAnalytics, compareMetric, summarizeAnalytics } from '@/lib/an
 import { calculateGoalProgress, goalStatusAfterProgress } from '@/lib/goal-service';
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 import { skillStatus, treeDepth } from '@/lib/skill-tree';
+import { radarData } from '@/lib/skill-radar';
 import { buildDailyJournalDraft } from '@/lib/journal-service';
 import { activityLevel, buildCalendarMonth, calendarWeeks } from '@/lib/calendar';
 import { achievementProgress, isAchievementUnlocked, type AchievementMetrics } from '@/lib/achievement-service';
@@ -260,6 +261,16 @@ describe('programming skill tree', () => {
     expect(skillStatus(0, 0)).toBe('not_started');
     expect(skillStatus(1, 40)).toBe('review');
     expect(skillStatus(5, 0)).toBe('mastered');
+  });
+});
+
+describe('skill radar', () => {
+  it('shows insufficient data rather than fabricating zero-based knowledge', () => {
+    expect(radarData({ id: 1, name: 'Algorithms', activityScore: 0, practiceScore: 0, assessmentScore: 0, confidenceScore: 0, consistencyScore: 0 })).toMatchObject({ hasData: false, Activity: null });
+  });
+
+  it('normalizes known dimensions for the radar chart', () => {
+    expect(radarData({ id: 1, name: 'Algorithms', activityScore: 42.6, practiceScore: 20, assessmentScore: 0, confidenceScore: 70, consistencyScore: 10 })).toMatchObject({ hasData: true, Activity: 43, Confidence: 70, Assessment: 0 });
   });
 });
 
