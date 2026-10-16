@@ -4,7 +4,7 @@ import * as schema from './schema';
 import path from 'path';
 import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'data', 'levelup.db');
+const dbPath = process.env.LEVELUP_DATABASE_PATH || path.join(process.cwd(), 'data', 'levelup.db');
 const dbDir = path.dirname(dbPath);
 
 // Ensure data directory exists

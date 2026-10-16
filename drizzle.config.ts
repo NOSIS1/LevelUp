@@ -5,6 +5,6 @@ export default {
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {
-    url: './data/levelup.db',
+    url: process.env.LEVELUP_DATABASE_PATH || './data/levelup.db',
   },
 } satisfies Config;

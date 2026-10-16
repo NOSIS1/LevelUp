@@ -41,6 +41,8 @@ yarn-error.log*
 # Backups
 /backups/
 ci-build.log
+playwright-report/
+test-results/
 
 # Local editor and OS files
 .idea/
