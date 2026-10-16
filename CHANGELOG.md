@@ -6,6 +6,13 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.4.0] - 2026-10-16
+
+### Added
+- GitHub token can be entered from Settings instead of being copied manually into `.env`.
+- Tokens are encrypted with AES-256-GCM before being stored in local SQLite; the encryption key remains server-side in `.env`.
+- Setup generates `GITHUB_TOKEN_ENCRYPTION_KEY` automatically and validates the native SQLite binding.
+
 ## [1.3.7] - 2026-10-16
 
 ### Fixed

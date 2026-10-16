@@ -20,6 +20,7 @@ import { fetchGitHubContributionCalendar, fetchGitHubEvents, fetchGitHubProfile,
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 import { skillStatus, treeDepth } from '@/lib/skill-tree';
 import { calculateConfigurableLevel, calculateConfigurableSessionXp, defaultXpSettings, type XpSettings } from '@/lib/xp-settings';
+import { decryptSecret, encryptSecret, getSecretEncryptionKey } from '@/lib/secret-crypto';
 
 const sessionInputSchema = z.object({
   type: z.enum(['english', 'coding']),
@@ -353,6 +354,26 @@ export async function getProfileSettings() {
     timezone: values.get('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     xp: await getXpSettings(),
   };
+}
+
+export async function getGitHubTokenStatus() {
+  const [setting] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, 'github_token_encrypted')).limit(1);
+  return { configured: Boolean(setting?.value), encryptionKeyReady: Boolean(process.env.GITHUB_TOKEN_ENCRYPTION_KEY) };
+}
+
+const githubTokenSchema = z.string().trim().max(500);
+
+export async function saveGitHubToken(input: string) {
+  const token = githubTokenSchema.parse(input);
+  const key = getSecretEncryptionKey();
+  if (!token) {
+    await db.delete(schema.appSettings).where(eq(schema.appSettings.key, 'github_token_encrypted'));
+  } else {
+    await setAppSetting('github_token_encrypted', encryptSecret(token, key), 'secret');
+  }
+  revalidatePath('/settings');
+  revalidatePath('/github');
+  return { configured: Boolean(token) };
 }
 
 export async function updateProfileSettings(input: z.input<typeof profileSettingsSchema>) {
@@ -1488,7 +1509,8 @@ export async function getGitHubDashboard() {
 
 export async function syncGitHub(usernameInput: string) {
   const username = validateGitHubUsername(usernameInput);
-  const token = process.env.GITHUB_TOKEN;
+  const [storedToken] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, 'github_token_encrypted')).limit(1);
+  const token = storedToken?.value ? decryptSecret(storedToken.value, getSecretEncryptionKey()) : process.env.GITHUB_TOKEN;
   let profile;
   let activity;
   let contributions: Awaited<ReturnType<typeof fetchGitHubContributionCalendar>> = [];

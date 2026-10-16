@@ -27,6 +27,7 @@ import { aggregateGitHubEvents, fetchGitHubContributionCalendar, parseContributi
 import { buildDataBackup, parseDataBackup } from '@/lib/data-transfer';
 import { isAutoTrackedQuest, isQuestCompletable, questCompletionReward, questProgressPercent, questWindow } from '@/lib/quest-service';
 import { elapsedFocusMinutes, formatTimer, normalizeFocusState, pauseFocusTimer, remainingSeconds, startFocusTimer, type FocusTimerState } from '@/lib/focus-timer';
+import { decryptSecret, encryptSecret, generateSecretEncryptionKey, getSecretEncryptionKey } from '@/lib/secret-crypto';
 
 describe('XP and levels', () => {
   it('calculates progressive levels', () => {
@@ -61,6 +62,32 @@ describe('XP and levels', () => {
     expect(() => calculateSessionXp(0)).toThrow(RangeError);
     expect(() => calculateSessionXp(301)).toThrow(RangeError);
     expect(() => calculateSessionXp(1.5)).toThrow(RangeError);
+  });
+});
+
+describe('encrypted secrets', () => {
+  it('round-trips GitHub tokens without storing plaintext', () => {
+    const token = 'github_pat_test_secret';
+    const key = generateSecretEncryptionKey();
+    const encrypted = encryptSecret(token, key);
+    expect(encrypted).not.toContain(token);
+    expect(decryptSecret(encrypted, key)).toBe(token);
+  });
+
+  it('rejects tampered encrypted tokens', () => {
+    const key = generateSecretEncryptionKey();
+    const encrypted = encryptSecret('secret', key);
+    const parts = encrypted.split(':');
+    parts[3] = `${parts[3].slice(0, -1)}${parts[3].at(-1) === 'A' ? 'B' : 'A'}`;
+    expect(() => decryptSecret(parts.join(':'), key)).toThrow();
+  });
+
+  it('requires a valid server-side encryption key', () => {
+    const previous = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
+    delete process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
+    expect(() => getSecretEncryptionKey()).toThrow('GITHUB_TOKEN_ENCRYPTION_KEY');
+    if (previous === undefined) delete process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
+    else process.env.GITHUB_TOKEN_ENCRYPTION_KEY = previous;
   });
 });
 
