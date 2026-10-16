@@ -61,13 +61,13 @@ if (args.has('--clean')) {
   rmSync(resolve(root, '.next'), { recursive: true, force: true });
 }
 
-if (args.has('--production')) {
-  console.log('\n[4/4] Building and starting production server');
+if (args.has('--dev')) {
+  console.log('\n[4/4] Starting development server (slower; compiles pages on demand)');
+  run(npm, ['run', 'dev']);
+} else if (args.has('--install-only')) {
+  console.log('\nSetup complete. Run setup normally for the optimized server or add --dev for hot reload.');
+} else {
+  console.log('\n[4/4] Building optimized production server');
   run(npm, ['run', 'build']);
   run(npm, ['run', 'start']);
-} else if (args.has('--install-only')) {
-  console.log('\nSetup complete. Start development with: npm run dev');
-} else {
-  console.log('\n[4/4] Starting development server at http://localhost:3000');
-  run(npm, ['run', 'dev']);
 }

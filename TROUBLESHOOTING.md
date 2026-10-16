@@ -12,6 +12,10 @@ Run `node scripts/setup.mjs` from the project root. It installs dependencies, cr
 
 Do not run `npm run build` while the dev server is active: both use `.next`. Stop all app processes, then run `node scripts/setup.mjs --clean`. This removes only generated `.next`, never `data/`.
 
+## The laptop is slow
+
+The normal setup starts the optimized production server. Use `node scripts/setup.mjs --dev` only when you need hot reload; development mode compiles pages on demand and uses more CPU/RAM.
+
 ## Database migration or native SQLite error
 
 Run `npm run db:push`. Before recovery, back up data using `npm run backup`. On Linux, install the build tools required by your Node.js distribution if `better-sqlite3` cannot install its prebuilt binary.

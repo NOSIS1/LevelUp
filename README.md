@@ -95,7 +95,8 @@ node scripts/setup.mjs
 ```sh
 node scripts/setup.mjs --install-only  # установка и схема БД без запуска
 node scripts/setup.mjs --check         # проверка типов, тесты и production build
-node scripts/setup.mjs --production    # production build и локальный сервер
+node scripts/setup.mjs                 # production build и быстрый локальный сервер
+node scripts/setup.mjs --dev           # development server с hot reload
 npm run check                          # типы + тесты + production build
 npm run db:push                        # применить изменения схемы SQLite
 ```

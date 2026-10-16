@@ -20,8 +20,8 @@ cd LevelUp
 node scripts/setup.mjs
 ```
 
-Или `./install.sh` (при необходимости: `chmod +x install.sh start.sh`). После первого запуска открыть <http://localhost:3000>.
+Или `./install.sh` (при необходимости: `chmod +x install.sh start.sh`). После первого запуска открыть <http://localhost:3000>. Обычный запуск использует быстрый production server; для hot reload запустите `node scripts/setup.mjs --dev`.
 
-Команды: `node scripts/setup.mjs --install-only`, `node scripts/setup.mjs --check`, `node scripts/setup.mjs --production`, `npm run backup`, `npm run restore -- <backup.db>`. Все данные находятся в `data/levelup.db`; резервная копия переносится между устройствами вручную.
+Команды: `node scripts/setup.mjs --install-only`, `node scripts/setup.mjs --check`, `node scripts/setup.mjs --dev`, `npm run backup`, `npm run restore -- <backup.db>`. Все данные находятся в `data/levelup.db`; резервная копия переносится между устройствами вручную.
 
 Подробные требования, приватность и CI: [README.md](README.md). Ошибки: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

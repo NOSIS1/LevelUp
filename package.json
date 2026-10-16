@@ -1,6 +1,6 @@
 {
   "name": "levelup",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Local-first learning progression tracker for English and programming",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.12",
-    "better-sqlite3": "^11.7.2",
+    "better-sqlite3": "^12.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
