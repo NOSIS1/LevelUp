@@ -37,7 +37,6 @@ jobs:
   e2e:
     name: Browser smoke tests
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -53,4 +52,28 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          if-no-files-found: warn
+
+  macos-build-diagnostics:
+    name: macOS Node 20/22 production build diagnostics
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        id: build
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build-log-node-${{ matrix.node }}
+          path: ci-build.log
           if-no-files-found: warn
