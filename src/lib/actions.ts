@@ -250,6 +250,49 @@ export async function updateProfile(data: {
   return getProfile();
 }
 
+const profileSettingsSchema = z.object({
+  displayName: z.string().trim().min(1).max(80),
+  englishLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
+  targetEnglishLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).nullable(),
+  dailyGoalMinutes: z.number().int().min(1).max(1440),
+  timezone: z.string().refine((value) => {
+    try { new Intl.DateTimeFormat('en-US', { timeZone: value }).format(); return true; }
+    catch { return false; }
+  }, 'Invalid IANA timezone'),
+});
+
+async function setAppSetting(key: string, value: string, type: string) {
+  const existing = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, key)).limit(1);
+  if (existing[0]) {
+    await db.update(schema.appSettings).set({ value, type, updatedAt: new Date() }).where(eq(schema.appSettings.id, existing[0].id));
+  } else {
+    await db.insert(schema.appSettings).values({ key, value, type });
+  }
+}
+
+export async function getProfileSettings() {
+  const profile = await getProfile();
+  const settings = await db.select().from(schema.appSettings).where(sql`${schema.appSettings.key} IN ('daily_goal_minutes', 'timezone')`);
+  const values = new Map(settings.map((setting) => [setting.key, setting.value]));
+  return {
+    displayName: profile.displayName,
+    englishLevel: profile.englishLevel,
+    targetEnglishLevel: profile.targetEnglishLevel,
+    dailyGoalMinutes: Number(values.get('daily_goal_minutes') || 25),
+    timezone: values.get('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  };
+}
+
+export async function updateProfileSettings(input: z.input<typeof profileSettingsSchema>) {
+  const settings = profileSettingsSchema.parse(input);
+  await db.update(schema.userProfile).set({ displayName: settings.displayName, englishLevel: settings.englishLevel, targetEnglishLevel: settings.targetEnglishLevel, updatedAt: new Date() }).where(eq(schema.userProfile.id, 1));
+  await setAppSetting('daily_goal_minutes', String(settings.dailyGoalMinutes), 'number');
+  await setAppSetting('timezone', settings.timezone, 'string');
+  revalidatePath('/settings');
+  revalidatePath('/');
+  return settings;
+}
+
 // Get all skills with progress
 export async function getSkillsWithProgress() {
   const skills = await db
