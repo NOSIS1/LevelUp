@@ -79,7 +79,7 @@ XP за сессию = минуты × XP/минуту + бонус длинно
 
 ## 🚀 Быстрый старт
 
-**Нужно:** Node.js 20.9+ (рекомендуется Node.js 22 LTS), Git для клонирования. На Debian/Ubuntu для native SQLite также нужны `build-essential` и `python3`.
+**Нужно:** Node.js 20.9–23.x (рекомендуется Node.js 22 LTS), Git для клонирования. На Debian/Ubuntu для native SQLite также нужны `build-essential` и `python3`. Node.js 24 пока не поддерживается для production build Next.js 15.5.27 на Unix.
 
 ### Windows — PowerShell
 

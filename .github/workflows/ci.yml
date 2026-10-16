@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [20, 22, 24]
+        node: [20, 22]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -59,12 +59,12 @@ jobs:
           if-no-files-found: warn
 
   macos-build-diagnostics:
-    name: macOS Node 20/22/24 production build diagnostics
+    name: macOS Node 20/22 production build diagnostics
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24]
+        node: [20, 22]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

@@ -25,6 +25,11 @@ if (major < 20 || (major === 20 && minor < 9)) {
   console.error('Install an LTS release from https://nodejs.org and run this script again.');
   process.exit(1);
 }
+if (major >= 24) {
+  console.error(`LevelUp currently supports Node.js 20.9–23.x. Current: ${process.version}`);
+  console.error('Use Node.js 22 LTS for the Next.js production build (nvm use 22).');
+  process.exit(1);
+}
 
 console.log(`LevelUp setup · Node ${process.version} · ${process.platform}/${process.arch}`);
 if (!existsSync(resolve(root, 'node_modules/next'))) {

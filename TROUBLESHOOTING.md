@@ -22,6 +22,8 @@ Run `npm run db:push`. Before recovery, back up data using `npm run backup`. On 
 
 If npm reports that `better-sqlite3` install scripts were blocked, the setup script will attempt a rebuild automatically. You can also run `npm rebuild better-sqlite3 --foreground-scripts`; on Debian/Ubuntu first install `build-essential` and `python3`.
 
+If setup reports that Node.js 24 is unsupported, use Node.js 22 LTS. Next.js 15.5.27 production builds can fail on Node.js 24 on Debian/macOS even when `db:push` succeeds.
+
 ## GitHub GraphQL Contributions
 
 Public REST endpoints can show only a limited set of public events, not the official complete Contributions calendar. To use daily official totals, configure a read-only fine-grained `GITHUB_TOKEN` in local `.env` and restart. Token must never be committed or entered into the browser.

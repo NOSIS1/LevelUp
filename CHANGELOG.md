@@ -6,6 +6,12 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.3.7] - 2026-10-16
+
+### Fixed
+- Documented and enforced the supported Node.js range (`20.9` through `23.x`); setup now rejects Node.js 24 with a direct Node.js 22 LTS migration instruction.
+- CI production builds remain required on Node.js 20 and 22, while avoiding a misleading green/failed Unix Node.js 24 build.
+
 ## [1.3.6] - 2026-10-16
 
 ### Fixed
