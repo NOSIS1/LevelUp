@@ -6,6 +6,12 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.3.2] - 2026-10-16
+
+### Fixed
+- Development server uses Turbopack to avoid stale webpack vendor chunks and reduce laptop resource usage during hot reload.
+- Clean dev startup now validates multiple routes without mixed `.next` chunk errors.
+
 ## [1.3.1] - 2026-10-16
 
 ### Fixed

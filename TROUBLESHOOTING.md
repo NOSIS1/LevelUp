@@ -14,7 +14,7 @@ Do not run `npm run build` while the dev server is active: both use `.next`. Sto
 
 ## The laptop is slow
 
-The normal setup starts the optimized production server. Use `node scripts/setup.mjs --dev` only when you need hot reload; development mode compiles pages on demand and uses more CPU/RAM.
+The normal setup starts the optimized production server. Use `node scripts/setup.mjs --dev` only when you need hot reload; it uses Turbopack and compiles pages on demand, so it still uses more CPU/RAM than production mode.
 
 ## Database migration or native SQLite error
 
