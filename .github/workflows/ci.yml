@@ -59,7 +59,7 @@ jobs:
           if-no-files-found: warn
 
   macos-build-diagnostics:
-    name: macOS Node 20/22 production build diagnostics
+    name: macOS Node 20/22/24 production build diagnostics
     runs-on: macos-latest
     strategy:
       fail-fast: false

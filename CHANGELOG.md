@@ -6,6 +6,12 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.3.6] - 2026-10-16
+
+### Fixed
+- Production builds use one Next.js worker to avoid silent Node.js 24 build-worker exits on Unix runners.
+- CI diagnostics job name now reflects Node.js 24 coverage.
+
 ## [1.3.5] - 2026-10-16
 
 ### Fixed
