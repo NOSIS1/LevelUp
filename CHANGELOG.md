@@ -6,6 +6,13 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.3.4] - 2026-10-16
+
+### Fixed
+- Debian/Linux setup detects a missing `better-sqlite3` native binding before database migration and attempts a foreground rebuild.
+- npm install-script allowlist permits only the required `better-sqlite3` and `esbuild` build scripts, including newer npm versions.
+- Setup now reports the required Debian/Ubuntu build tools when native SQLite compilation cannot start.
+
 ## [1.3.3] - 2026-10-16
 
 ### Fixed

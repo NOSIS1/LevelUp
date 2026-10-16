@@ -34,6 +34,17 @@ if (!existsSync(resolve(root, 'node_modules/next'))) {
   console.log('\n[1/4] Dependencies already installed');
 }
 
+const nativeCheck = spawnSync(process.execPath, ['scripts/check-native-sqlite.mjs'], {
+  cwd: root,
+  stdio: 'inherit',
+  shell: isWindows,
+});
+if (nativeCheck.status !== 0) {
+  console.log('\nSQLite native binding is missing; rebuilding better-sqlite3 once');
+  run(npm, ['rebuild', 'better-sqlite3', '--foreground-scripts']);
+  run(process.execPath, ['scripts/check-native-sqlite.mjs']);
+}
+
 if (!existsSync(resolve(root, '.env'))) {
   if (existsSync(resolve(root, '.env.example'))) {
     copyFileSync(resolve(root, '.env.example'), resolve(root, '.env'));

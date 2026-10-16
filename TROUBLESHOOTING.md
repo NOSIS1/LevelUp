@@ -20,6 +20,8 @@ The normal setup starts the optimized production server. Use `node scripts/setup
 
 Run `npm run db:push`. Before recovery, back up data using `npm run backup`. On Linux, install the build tools required by your Node.js distribution if `better-sqlite3` cannot install its prebuilt binary.
 
+If npm reports that `better-sqlite3` install scripts were blocked, the setup script will attempt a rebuild automatically. You can also run `npm rebuild better-sqlite3 --foreground-scripts`; on Debian/Ubuntu first install `build-essential` and `python3`.
+
 ## GitHub GraphQL Contributions
 
 Public REST endpoints can show only a limited set of public events, not the official complete Contributions calendar. To use daily official totals, configure a read-only fine-grained `GITHUB_TOKEN` in local `.env` and restart. Token must never be committed or entered into the browser.
