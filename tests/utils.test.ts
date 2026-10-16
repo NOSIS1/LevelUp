@@ -15,6 +15,7 @@ import { normalizeProjectProgress, projectDurationHours } from '@/lib/project-se
 import { buildDailyAnalytics, compareMetric, summarizeAnalytics } from '@/lib/analytics';
 import { calculateGoalProgress, goalStatusAfterProgress } from '@/lib/goal-service';
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
+import { skillStatus, treeDepth } from '@/lib/skill-tree';
 import { buildDailyJournalDraft } from '@/lib/journal-service';
 import { activityLevel, buildCalendarMonth, calendarWeeks } from '@/lib/calendar';
 import { achievementProgress, isAchievementUnlocked, type AchievementMetrics } from '@/lib/achievement-service';
@@ -249,6 +250,16 @@ describe('timezone helpers', () => {
     const bounds = localDayBoundsUtc(new Date('2026-10-12T12:00:00.000Z'), 'Europe/Moscow');
     expect(bounds.start.getTime()).toBeLessThan(bounds.end.getTime());
     expect(bounds.end.getTime() - bounds.start.getTime()).toBe(86400000);
+  });
+});
+
+describe('programming skill tree', () => {
+  const nodes = [{ id: 1, name: 'Root', description: null, icon: null, parentSkillId: null, level: 0, xp: 0, category: 'programming' }, { id: 2, name: 'Child', description: null, icon: null, parentSkillId: 1, level: 1, xp: 40, category: 'programming' }, { id: 3, name: 'Leaf', description: null, icon: null, parentSkillId: 2, level: 5, xp: 0, category: 'programming' }];
+  it('calculates hierarchical depth and honest status', () => {
+    expect(treeDepth(3, nodes)).toBe(2);
+    expect(skillStatus(0, 0)).toBe('not_started');
+    expect(skillStatus(1, 40)).toBe('review');
+    expect(skillStatus(5, 0)).toBe('mastered');
   });
 });
 

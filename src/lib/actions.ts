@@ -18,6 +18,7 @@ import { isAutoTrackedQuest, isQuestCompletable, questCompletionReward, questPro
 import { fetchLeetCodeStats, validateLeetCodeUsername } from '@/lib/leetcode-adapter';
 import { fetchGitHubContributionCalendar, fetchGitHubEvents, fetchGitHubProfile, validateGitHubUsername } from '@/lib/github-adapter';
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
+import { skillStatus, treeDepth } from '@/lib/skill-tree';
 
 const sessionInputSchema = z.object({
   type: z.enum(['english', 'coding']),
@@ -102,7 +103,41 @@ export async function initializeProfile() {
     await initializeDefaultAchievements();
   }
 
+  await initializeProgrammingTree();
+
   return profiles[0] || (await db.select().from(schema.userProfile).limit(1))[0];
+}
+
+async function initializeProgrammingTree() {
+  const tree = [
+    { name: 'Computer Science', description: 'Фундаментальные знания CS', icon: '🎓', parent: null },
+    { name: 'Programming Fundamentals', description: 'Переменные, функции, типы и управление потоком', icon: '🧱', parent: 'Computer Science' },
+    { name: 'Data Structures', description: 'Базовые структуры данных и их trade-offs', icon: '🗃️', parent: 'Computer Science' },
+    { name: 'Algorithms', description: 'Алгоритмы и оценка сложности', icon: '🧮', parent: 'Data Structures' },
+    { name: 'Problem Solving', description: 'Разбор и решение практических задач', icon: '🧩', parent: 'Algorithms' },
+    { name: 'C#', description: 'Отдельная ветка практики C#', icon: '🔷', parent: 'Programming Fundamentals' },
+    { name: 'Python', description: 'Отдельная ветка практики Python', icon: '🐍', parent: 'Programming Fundamentals' },
+    { name: 'JavaScript / TypeScript', description: 'Отдельная ветка web-разработки', icon: '🟨', parent: 'Programming Fundamentals' },
+  ];
+  const existing = await db.select().from(schema.skills);
+  const byName = new Map(existing.map((skill) => [skill.name, skill]));
+  for (const [index, item] of tree.entries()) {
+    let skill = byName.get(item.name);
+    if (!skill) {
+      [skill] = await db.insert(schema.skills).values({ name: item.name, category: 'programming', description: item.description, icon: item.icon, displayOrder: index }).returning();
+      await db.insert(schema.skillProgress).values({ skillId: skill.id });
+      byName.set(item.name, skill);
+    }
+  }
+  for (const item of tree) {
+    if (item.parent) {
+      const skill = byName.get(item.name);
+      const parent = byName.get(item.parent);
+      if (skill && parent && skill.parentSkillId !== parent.id) {
+        await db.update(schema.skills).set({ parentSkillId: parent.id }).where(eq(schema.skills.id, skill.id));
+      }
+    }
+  }
 }
 
 // Initialize default skills
@@ -321,6 +356,27 @@ export async function getSkillsWithProgress() {
     .leftJoin(schema.skillProgress, eq(schema.skills.id, schema.skillProgress.skillId));
 
   return skills;
+}
+
+export async function getProgrammingSkillTree() {
+  await initializeProgrammingTree();
+  const nodes = await db.select({
+    id: schema.skills.id,
+    name: schema.skills.name,
+    description: schema.skills.description,
+    icon: schema.skills.icon,
+    parentSkillId: schema.skills.parentSkillId,
+    level: schema.skillProgress.level,
+    xp: schema.skillProgress.xp,
+    category: schema.skills.category,
+  }).from(schema.skills).leftJoin(schema.skillProgress, eq(schema.skills.id, schema.skillProgress.skillId));
+  return nodes.filter((node) => node.category === 'programming').map((node) => ({
+    ...node,
+    level: node.level || 0,
+    xp: node.xp || 0,
+    depth: treeDepth(node.id, nodes.map((item) => ({ ...item, level: item.level || 0, xp: item.xp || 0 }))),
+    status: skillStatus(node.level || 0, node.xp || 0),
+  }));
 }
 
 // Get dashboard statistics

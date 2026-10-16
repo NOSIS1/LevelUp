@@ -2,11 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Code, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { getRecentSessions, getCodingNotes, getCodingTasks } from '@/lib/actions';
+import { getRecentSessions, getCodingNotes, getCodingTasks, getProgrammingSkillTree } from '@/lib/actions';
 import { formatDuration } from '@/lib/utils';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { CodingNotes } from '@/components/coding/coding-notes';
 import { CodingTasks } from '@/components/coding/coding-tasks';
+import { SkillTree } from '@/components/coding/skill-tree';
 export const dynamic = 'force-dynamic';
 
 export default async function CodingPage() {
@@ -14,6 +15,7 @@ export default async function CodingPage() {
   const codingSessions = sessions.filter(s => s.type === 'coding');
   const codingNotes = await getCodingNotes();
   const codingTasks = await getCodingTasks();
+  const skillTree = await getProgrammingSkillTree();
 
   const totalMinutes = codingSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
   const totalHours = Math.round(totalMinutes / 60 * 10) / 10;
@@ -145,6 +147,7 @@ export default async function CodingPage() {
       </Card>
 
       <CodingNotes notes={codingNotes} />
+      <SkillTree nodes={skillTree} />
       <CodingTasks tasks={codingTasks} />
     </div>
   );

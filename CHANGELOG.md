@@ -6,6 +6,15 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.2.0] - 2026-10-16
+
+### Added
+- Programming Skill Tree with Computer Science, fundamentals, data structures, algorithms, problem solving, and language branches.
+- Parent dependencies and per-skill learning/review/mastery states.
+
+### Tests
+- Added tree-depth and skill-status coverage; full suite passes.
+
 ## [1.1.5] - 2026-10-16
 
 ### Fixed
