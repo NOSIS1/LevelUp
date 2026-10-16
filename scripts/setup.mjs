@@ -59,11 +59,12 @@ if (args.has('--check')) {
 if (args.has('--clean')) {
   console.log('\nRemoving only generated Next.js build cache (.next)');
   rmSync(resolve(root, '.next'), { recursive: true, force: true });
+  rmSync(resolve(root, '.next-dev'), { recursive: true, force: true });
 }
 
 if (args.has('--dev')) {
   console.log('\nClearing generated Next.js cache before development start');
-  rmSync(resolve(root, '.next'), { recursive: true, force: true });
+  rmSync(resolve(root, '.next-dev'), { recursive: true, force: true });
   console.log('\n[4/4] Starting development server (slower; compiles pages on demand)');
   run(npm, ['run', 'dev']);
 } else if (args.has('--install-only')) {

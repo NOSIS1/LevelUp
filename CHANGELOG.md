@@ -6,6 +6,12 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.3.3] - 2026-10-16
+
+### Fixed
+- Development Turbopack output is isolated in `.next-dev`, preventing production builds and development hot reload from overwriting each other's manifests.
+- CI now checks that `package.json`, `CHANGELOG.md`, and release tags use the same version.
+
 ## [1.3.2] - 2026-10-16
 
 ### Fixed

@@ -117,7 +117,7 @@ node scripts/setup.mjs
 node scripts/setup.mjs --install-only  # установка и схема БД без запуска
 node scripts/setup.mjs --check         # проверка типов, тесты и production build
 node scripts/setup.mjs                 # production build и быстрый локальный сервер
-node scripts/setup.mjs --dev           # development server с Turbopack и hot reload
+node scripts/setup.mjs --dev           # development server с Turbopack и hot reload (.next-dev)
 npm run check                          # типы + тесты + production build
 npm run db:push                        # применить изменения схемы SQLite
 npm run test:e2e                        # Playwright smoke-тесты (нужен Chromium)

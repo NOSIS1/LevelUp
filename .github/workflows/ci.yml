@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Check package, changelog, and tag versions
+        run: node scripts/check-version.mjs
       - run: npm ci
       - run: npm audit --omit=dev
       - run: npm run db:push
@@ -43,6 +45,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Check package, changelog, and tag versions
+        run: node scripts/check-version.mjs
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
@@ -67,6 +71,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Check package, changelog, and tag versions
+        run: node scripts/check-version.mjs
       - run: npm ci
       - run: npm run db:push
       - run: npm run build
