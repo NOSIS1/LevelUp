@@ -62,6 +62,8 @@ if (args.has('--clean')) {
 }
 
 if (args.has('--dev')) {
+  console.log('\nClearing generated Next.js cache before development start');
+  rmSync(resolve(root, '.next'), { recursive: true, force: true });
   console.log('\n[4/4] Starting development server (slower; compiles pages on demand)');
   run(npm, ['run', 'dev']);
 } else if (args.has('--install-only')) {

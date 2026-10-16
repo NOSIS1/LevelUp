@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Download, Plus, Search, Trash2, Upload } from 'lucide-react';
 import { addWord, deleteWord, importWordsCsv, reviewWord } from '@/lib/actions';
 import { wordsToCsv, type WordCsvRow } from '@/lib/csv';
+import { parseStringArray } from '@/lib/json';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -118,7 +119,7 @@ export function Vocabulary({ words }: { words: Word[] }) {
       definition: word.definition || '',
       example: word.example || '',
       partOfSpeech: word.partOfSpeech || '',
-      tags: word.tags ? JSON.parse(word.tags) as string[] : [],
+      tags: parseStringArray(word.tags),
     }));
     const blob = new Blob(['\uFEFF', wordsToCsv(rows)], { type: 'text/csv;charset=utf-8' });
     const href = URL.createObjectURL(blob);

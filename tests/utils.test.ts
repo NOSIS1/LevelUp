@@ -15,6 +15,7 @@ import { normalizeProjectProgress, projectDurationHours } from '@/lib/project-se
 import { buildDailyAnalytics, compareMetric, summarizeAnalytics } from '@/lib/analytics';
 import { calculateGoalProgress, goalStatusAfterProgress } from '@/lib/goal-service';
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
+import { parseStringArray } from '@/lib/json';
 import { skillStatus, treeDepth } from '@/lib/skill-tree';
 import { radarData } from '@/lib/skill-radar';
 import { buildDailyJournalDraft } from '@/lib/journal-service';
@@ -251,6 +252,15 @@ describe('timezone helpers', () => {
     const bounds = localDayBoundsUtc(new Date('2026-10-12T12:00:00.000Z'), 'Europe/Moscow');
     expect(bounds.start.getTime()).toBeLessThan(bounds.end.getTime());
     expect(bounds.end.getTime() - bounds.start.getTime()).toBe(86400000);
+  });
+});
+
+describe('safe JSON UI parsing', () => {
+  it('returns an empty list for malformed or non-string arrays', () => {
+    expect(parseStringArray('not json')).toEqual([]);
+    expect(parseStringArray('{"value":1}')).toEqual([]);
+    expect(parseStringArray('[1, null]')).toEqual([]);
+    expect(parseStringArray('["tag"]')).toEqual(['tag']);
   });
 });
 
