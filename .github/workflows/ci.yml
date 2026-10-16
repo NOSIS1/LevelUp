@@ -25,3 +25,11 @@ jobs:
       - run: npm run type-check
       - run: npm test
       - run: npm run build
+        id: build
+      - name: Upload build log on failure
+        if: failure() && steps.build.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.os }}-node-${{ matrix.node }}
+          path: ci-build.log
+          if-no-files-found: warn

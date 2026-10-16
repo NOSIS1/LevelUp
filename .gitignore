@@ -40,6 +40,7 @@ yarn-error.log*
 
 # Backups
 /backups/
+ci-build.log
 
 # Local editor and OS files
 .idea/

@@ -14,7 +14,8 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "build": "node scripts/run-build.mjs",
+    "build:next": "next build",
     "start": "next start --hostname 127.0.0.1",
     "lint": "next lint",
     "check": "npm run type-check && npm test && npm run build",
