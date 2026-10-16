@@ -1,9 +1,11 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 const generatedFiles = ['next-env.d.ts', 'tsconfig.json'];
 const originals = new Map(generatedFiles.map((file) => [file, readFileSync(file, 'utf8')]));
+const envSetup = spawnSync(process.execPath, ['scripts/ensure-env-key.mjs'], { cwd: process.cwd(), stdio: 'inherit' });
+if (envSetup.status !== 0) process.exit(envSetup.status ?? 1);
 
 const command = process.platform === 'win32' ? 'next.cmd' : 'next';
 const child = spawn(command, ['dev', '--turbopack', '--hostname', '127.0.0.1'], {

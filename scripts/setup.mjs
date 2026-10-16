@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { randomBytes } from 'node:crypto';
+import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 
@@ -60,20 +59,7 @@ if (!existsSync(resolve(root, '.env'))) {
   console.log('[2/4] Keeping existing .env unchanged');
 }
 
-const envPath = resolve(root, '.env');
-let envContent = readFileSync(envPath, 'utf8');
-const encryptionKeyLine = /^GITHUB_TOKEN_ENCRYPTION_KEY=(.*)$/m.exec(envContent);
-if (!encryptionKeyLine) {
-  appendFileSync(envPath, `${envContent.endsWith('\n') ? '' : '\n'}GITHUB_TOKEN_ENCRYPTION_KEY=${randomBytes(32).toString('hex')}\n`, 'utf8');
-  console.log('[2/4] Created local GitHub token encryption key in .env');
-} else if (encryptionKeyLine[1].trim() === '') {
-  envContent = envContent.replace(encryptionKeyLine[0], `GITHUB_TOKEN_ENCRYPTION_KEY=${randomBytes(32).toString('hex')}`);
-  writeFileSync(envPath, envContent, 'utf8');
-  console.log('[2/4] Created local GitHub token encryption key in .env');
-} else if (!/^[a-f0-9]{64}$/i.test(encryptionKeyLine[1].trim())) {
-  console.error('GITHUB_TOKEN_ENCRYPTION_KEY must be a 64-character hexadecimal key.');
-  process.exit(1);
-}
+run(process.execPath, ['scripts/ensure-env-key.mjs']);
 
 mkdirSync(resolve(root, 'data'), { recursive: true });
 console.log('[3/4] Applying SQLite schema (existing database is preserved)');

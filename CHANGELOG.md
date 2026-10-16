@@ -6,6 +6,12 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.4.1] - 2026-10-16
+
+### Fixed
+- Local dev and production starts now create `GITHUB_TOKEN_ENCRYPTION_KEY` automatically when an older `.env` does not contain it.
+- Settings no longer shows a false missing-key warning after upgrading from versions before the GitHub token UI.
+
 ## [1.4.0] - 2026-10-16
 
 ### Added
