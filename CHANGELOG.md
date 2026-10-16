@@ -6,6 +6,13 @@
 - **MINOR** — новые пользовательские возможности без намеренного нарушения совместимости.
 - **PATCH** — исправления, безопасность, документация и совместимые улучшения.
 
+## [1.2.2] - 2026-10-16
+
+### Fixed
+- Dev startup clears stale Next.js build cache before starting, reducing mixed-chunk/runtime errors after rebuilds.
+- Malformed JSON tags/topics in stored records no longer crash UI pages.
+- Browser smoke coverage confirms core flows after a clean isolated startup.
+
 ## [1.2.1] - 2026-10-16
 
 ### Added
