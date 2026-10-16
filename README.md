@@ -14,7 +14,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
@@ -28,6 +28,27 @@
 - Исправление и удаление сессий с корректировкой XP и статистики.
 - Серии занятий и календарь активности без фиктивных данных.
 - Достижения с одноразовыми наградами, квесты и цели.
+- Настраиваемые правила XP и уровней — без пересчёта уже записанной истории.
+
+### ⭐ Как работает XP
+
+```text
+XP за сессию = минуты × XP/минуту + бонус длинной сессии
+
+Уровень = floor((общий XP / базовый XP уровня) ^ (1 / степень)) + 1
+```
+
+Настройки находятся в **Настройки → Профиль и параметры обучения**:
+
+| Параметр | Значение по умолчанию |
+|---|---:|
+| XP за минуту | 1 |
+| Порог длинной сессии | 50 минут |
+| Бонус длинной сессии | 5 XP |
+| Базовый XP уровня | 100 XP |
+| Степень прогрессии | 2 |
+
+Изменение правил влияет только на новые события. Старые XP-транзакции не переписываются.
 
 ### 📚 Английский
 - Навыки CEFR и категории Vocabulary, Grammar, Listening, Speaking, Reading, Writing.
@@ -86,7 +107,7 @@ node scripts/setup.mjs
 
 Или `./install.sh` (`chmod +x install.sh start.sh`, если нужно).
 
-После запуска откройте **<http://localhost:3000>**. Остановить сервер: `Ctrl+C`.
+После запуска откройте **<http://localhost:3000>**. По умолчанию setup запускает оптимизированный production-сервер. Остановить сервер: `Ctrl+C`.
 
 > Первый запуск устанавливает зависимости, создаёт локальный `.env` только при его отсутствии, применяет схему SQLite без удаления существующей базы и запускает dev-сервер. Setup не очищает пользовательские данные.
 
@@ -99,6 +120,7 @@ node scripts/setup.mjs                 # production build и быстрый ло
 node scripts/setup.mjs --dev           # development server с hot reload
 npm run check                          # типы + тесты + production build
 npm run db:push                        # применить изменения схемы SQLite
+npm run test:e2e                        # Playwright smoke-тесты (нужен Chromium)
 ```
 
 ---

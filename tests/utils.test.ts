@@ -18,6 +18,7 @@ import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 import { parseStringArray } from '@/lib/json';
 import { skillStatus, treeDepth } from '@/lib/skill-tree';
 import { radarData } from '@/lib/skill-radar';
+import { calculateConfigurableLevel, calculateConfigurableSessionXp, defaultXpSettings } from '@/lib/xp-settings';
 import { buildDailyJournalDraft } from '@/lib/journal-service';
 import { activityLevel, buildCalendarMonth, calendarWeeks } from '@/lib/calendar';
 import { achievementProgress, isAchievementUnlocked, type AchievementMetrics } from '@/lib/achievement-service';
@@ -281,6 +282,18 @@ describe('skill radar', () => {
 
   it('normalizes known dimensions for the radar chart', () => {
     expect(radarData({ id: 1, name: 'Algorithms', activityScore: 42.6, practiceScore: 20, assessmentScore: 0, confidenceScore: 70, consistencyScore: 10 })).toMatchObject({ hasData: true, Activity: 43, Confidence: 70, Assessment: 0 });
+  });
+});
+
+describe('configurable XP rules', () => {
+  it('preserves current default session rewards', () => {
+    expect(calculateConfigurableSessionXp(25, defaultXpSettings)).toBe(25);
+    expect(calculateConfigurableSessionXp(50, defaultXpSettings)).toBe(55);
+  });
+
+  it('uses configured level progression for new calculations', () => {
+    expect(calculateConfigurableLevel(100, defaultXpSettings)).toBe(2);
+    expect(calculateConfigurableLevel(100, { ...defaultXpSettings, levelBaseXp: 200 })).toBe(1);
   });
 });
 

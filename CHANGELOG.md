@@ -17,6 +17,13 @@
 - Изменения XP применяются только к новым событиям; существующий XP-журнал не пересчитывается задним числом.
 - CI и browser smoke подтверждены на Windows, macOS и Linux для Node.js 20/22.
 
+### Added
+- Playwright smoke-тесты пользовательских сценариев.
+- Кроссплатформенный production/dev запуск с Node.js 20/22.
+
+### Performance
+- Dashboard Radar Chart загружается отдельным lazy chunk.
+
 ## [1.2.2] - 2026-10-16
 
 ### Fixed

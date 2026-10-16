@@ -19,6 +19,7 @@ import { fetchLeetCodeStats, validateLeetCodeUsername } from '@/lib/leetcode-ada
 import { fetchGitHubContributionCalendar, fetchGitHubEvents, fetchGitHubProfile, validateGitHubUsername } from '@/lib/github-adapter';
 import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 import { skillStatus, treeDepth } from '@/lib/skill-tree';
+import { calculateConfigurableLevel, calculateConfigurableSessionXp, defaultXpSettings, type XpSettings } from '@/lib/xp-settings';
 
 const sessionInputSchema = z.object({
   type: z.enum(['english', 'coding']),
@@ -37,14 +38,26 @@ const sessionInputSchema = z.object({
 
 type SessionInput = z.input<typeof sessionInputSchema>;
 
-function updateProfileXpInTransaction(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], amountDelta: number) {
+function updateProfileXpInTransaction(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], amountDelta: number, xpSettings: XpSettings = defaultXpSettings) {
   const profile = tx.select().from(schema.userProfile).limit(1).get();
   if (!profile) throw new Error('Profile is not initialized');
   const totalXp = profile.totalXp + amountDelta;
   if (totalXp < 0) throw new Error('XP correction would make the profile balance negative');
   tx.update(schema.userProfile)
-    .set({ totalXp, currentLevel: calculateLevel(totalXp), updatedAt: new Date() })
+    .set({ totalXp, currentLevel: calculateConfigurableLevel(totalXp, xpSettings), updatedAt: new Date() })
     .where(eq(schema.userProfile.id, profile.id)).run();
+}
+
+function getXpSettingsInTransaction(tx: Parameters<Parameters<typeof db.transaction>[0]>[0]): XpSettings {
+  const rows = tx.select().from(schema.appSettings).where(sql`${schema.appSettings.key} IN ('xp_per_minute', 'long_session_threshold_minutes', 'long_session_bonus_xp', 'level_base_xp', 'level_exponent')`).all();
+  const values = new Map(rows.map((row) => [row.key, Number(row.value)]));
+  return {
+    xpPerMinute: values.get('xp_per_minute') ?? defaultXpSettings.xpPerMinute,
+    longSessionThresholdMinutes: values.get('long_session_threshold_minutes') ?? defaultXpSettings.longSessionThresholdMinutes,
+    longSessionBonusXp: values.get('long_session_bonus_xp') ?? defaultXpSettings.longSessionBonusXp,
+    levelBaseXp: values.get('level_base_xp') ?? defaultXpSettings.levelBaseXp,
+    levelExponent: values.get('level_exponent') ?? defaultXpSettings.levelExponent,
+  };
 }
 
 function refreshDailyStatistics(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], date: Date) {
@@ -300,6 +313,11 @@ const profileSettingsSchema = z.object({
     try { new Intl.DateTimeFormat('en-US', { timeZone: value }).format(); return true; }
     catch { return false; }
   }, 'Invalid IANA timezone'),
+  xpPerMinute: z.number().positive().max(100),
+  longSessionThresholdMinutes: z.number().int().min(1).max(300),
+  longSessionBonusXp: z.number().int().min(0).max(10000),
+  levelBaseXp: z.number().positive().max(100000),
+  levelExponent: z.number().min(1).max(4),
 });
 
 async function setAppSetting(key: string, value: string, type: string) {
@@ -309,6 +327,18 @@ async function setAppSetting(key: string, value: string, type: string) {
   } else {
     await db.insert(schema.appSettings).values({ key, value, type });
   }
+}
+
+async function getXpSettings(): Promise<XpSettings> {
+  const rows = await db.select().from(schema.appSettings).where(sql`${schema.appSettings.key} IN ('xp_per_minute', 'long_session_threshold_minutes', 'long_session_bonus_xp', 'level_base_xp', 'level_exponent')`);
+  const values = new Map(rows.map((row) => [row.key, Number(row.value)]));
+  return {
+    xpPerMinute: values.get('xp_per_minute') ?? defaultXpSettings.xpPerMinute,
+    longSessionThresholdMinutes: values.get('long_session_threshold_minutes') ?? defaultXpSettings.longSessionThresholdMinutes,
+    longSessionBonusXp: values.get('long_session_bonus_xp') ?? defaultXpSettings.longSessionBonusXp,
+    levelBaseXp: values.get('level_base_xp') ?? defaultXpSettings.levelBaseXp,
+    levelExponent: values.get('level_exponent') ?? defaultXpSettings.levelExponent,
+  };
 }
 
 export async function getProfileSettings() {
@@ -321,6 +351,7 @@ export async function getProfileSettings() {
     targetEnglishLevel: profile.targetEnglishLevel,
     dailyGoalMinutes: Number(values.get('daily_goal_minutes') || 25),
     timezone: values.get('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    xp: await getXpSettings(),
   };
 }
 
@@ -329,6 +360,11 @@ export async function updateProfileSettings(input: z.input<typeof profileSetting
   await db.update(schema.userProfile).set({ displayName: settings.displayName, englishLevel: settings.englishLevel, targetEnglishLevel: settings.targetEnglishLevel, updatedAt: new Date() }).where(eq(schema.userProfile.id, 1));
   await setAppSetting('daily_goal_minutes', String(settings.dailyGoalMinutes), 'number');
   await setAppSetting('timezone', settings.timezone, 'string');
+  await setAppSetting('xp_per_minute', String(settings.xpPerMinute), 'number');
+  await setAppSetting('long_session_threshold_minutes', String(settings.longSessionThresholdMinutes), 'number');
+  await setAppSetting('long_session_bonus_xp', String(settings.longSessionBonusXp), 'number');
+  await setAppSetting('level_base_xp', String(settings.levelBaseXp), 'number');
+  await setAppSetting('level_exponent', String(settings.levelExponent), 'number');
   revalidatePath('/settings');
   revalidatePath('/');
   return settings;
@@ -464,7 +500,8 @@ export async function getDashboardStats() {
 // Create learning session
 export async function createLearningSession(data: SessionInput) {
   const parsed = sessionInputSchema.parse(data);
-  const xpAwarded = calculateSessionXp(parsed.durationMinutes, parsed.difficulty);
+  const xpSettings = await getXpSettings();
+  const xpAwarded = calculateConfigurableSessionXp(parsed.durationMinutes, xpSettings);
   const sessionDate = parsed.date || new Date();
 
   const result = db.transaction((tx) => {
@@ -482,7 +519,7 @@ export async function createLearningSession(data: SessionInput) {
       xpAwarded,
     }).returning().all();
 
-    updateProfileXpInTransaction(tx, xpAwarded);
+    updateProfileXpInTransaction(tx, xpAwarded, xpSettings);
     tx.insert(schema.xpTransactions).values({
       amount: xpAwarded,
       source: 'session',
@@ -491,7 +528,7 @@ export async function createLearningSession(data: SessionInput) {
     }).run();
     refreshDailyStatistics(tx, sessionDate);
 
-    return { session, xpAwarded, newLevel: calculateLevel(profile.totalXp + xpAwarded) > profile.currentLevel };
+    return { session, xpAwarded, newLevel: calculateConfigurableLevel(profile.totalXp + xpAwarded, xpSettings) > profile.currentLevel };
   });
   revalidatePath('/');
   revalidatePath('/english');
@@ -503,12 +540,13 @@ export async function createLearningSession(data: SessionInput) {
 export async function updateLearningSession(id: number, data: SessionInput) {
   if (!Number.isInteger(id) || id < 1) throw new RangeError('Invalid session id');
   const parsed = sessionInputSchema.parse(data);
+  const xpSettings = await getXpSettings();
 
   const result = db.transaction((tx) => {
     const previous = tx.select().from(schema.learningSessions)
       .where(eq(schema.learningSessions.id, id)).get();
     if (!previous) throw new Error('Session not found');
-    const nextXp = calculateSessionXp(parsed.durationMinutes, parsed.difficulty);
+    const nextXp = calculateConfigurableSessionXp(parsed.durationMinutes, xpSettings);
     const nextDate = parsed.date || previous.date;
 
     tx.update(schema.learningSessions).set({
@@ -525,7 +563,7 @@ export async function updateLearningSession(id: number, data: SessionInput) {
 
     const delta = calculateXpAdjustment(previous.xpAwarded, nextXp);
     if (delta !== 0) {
-      updateProfileXpInTransaction(tx, delta);
+      updateProfileXpInTransaction(tx, delta, xpSettings);
       tx.insert(schema.xpTransactions).values({
         amount: delta,
         source: 'correction',
@@ -552,7 +590,7 @@ export async function deleteLearningSession(id: number) {
       .where(eq(schema.learningSessions.id, id)).get();
     if (!session) throw new Error('Session not found');
     tx.delete(schema.learningSessions).where(eq(schema.learningSessions.id, id)).run();
-    updateProfileXpInTransaction(tx, calculateXpAdjustment(session.xpAwarded, 0));
+    updateProfileXpInTransaction(tx, calculateXpAdjustment(session.xpAwarded, 0), getXpSettingsInTransaction(tx));
     tx.insert(schema.xpTransactions).values({
       amount: -session.xpAwarded,
       source: 'correction',
@@ -813,7 +851,7 @@ export async function recordCodingTaskAttempt(taskId: number, outcome: 'solved' 
     const award = taskXpForAttempt(task.status, outcome, task.difficulty as 'easy' | 'medium' | 'hard');
     const xpAwarded = award.xpAwarded;
     if (xpAwarded > 0) {
-      updateProfileXpInTransaction(tx, xpAwarded);
+      updateProfileXpInTransaction(tx, xpAwarded, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({
         amount: xpAwarded,
         source: 'coding_task',
@@ -847,7 +885,7 @@ export async function deleteCodingTask(taskId: number) {
     // Removing the task reverses its original one-time award. Attempt history remains attached
     // until deletion, then is removed in the same transaction.
     if (task.xpAwarded > 0) {
-      updateProfileXpInTransaction(tx, -task.xpAwarded);
+      updateProfileXpInTransaction(tx, -task.xpAwarded, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({
         amount: -task.xpAwarded,
         source: 'correction',
@@ -1215,7 +1253,7 @@ export async function checkAchievements() {
       const rule = achievementRules.find((candidate) => candidate.key === definition.key);
       if (!rule || unlockedIds.has(definition.id) || !isAchievementUnlocked(rule, metrics)) continue;
       tx.insert(schema.userAchievements).values({ achievementId: definition.id, isUnlocked: true, progress: 100 }).run();
-      updateProfileXpInTransaction(tx, definition.xpReward);
+      updateProfileXpInTransaction(tx, definition.xpReward, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({ amount: definition.xpReward, source: 'achievement', sourceId: definition.id, description: `Achievement unlocked: ${definition.title}` }).run();
       newlyUnlocked.push(definition.key);
     }
@@ -1299,7 +1337,7 @@ export async function confirmQuestCompletion(questId: number) {
     tx.update(schema.quests).set({ status: 'completed', completedAt: new Date(), currentValue: quest.targetValue }).where(eq(schema.quests.id, questId)).run();
     const reward = questCompletionReward(quest.status, quest.xpReward);
     if (reward.shouldAward) {
-      updateProfileXpInTransaction(tx, reward.xpAwarded);
+      updateProfileXpInTransaction(tx, reward.xpAwarded, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({ amount: reward.xpAwarded, source: 'quest', sourceId: questId, description: `Quest completed: ${quest.title}` }).run();
     }
     return { questId, alreadyCompleted: false, xpAwarded: reward.xpAwarded };
@@ -1316,7 +1354,7 @@ function awardQuestOnce(questId: number) {
     tx.update(schema.quests).set({ status: 'completed', completedAt: new Date(), currentValue: quest.targetValue }).where(eq(schema.quests.id, questId)).run();
     const reward = questCompletionReward(quest.status, quest.xpReward);
     if (reward.shouldAward) {
-      updateProfileXpInTransaction(tx, reward.xpAwarded);
+      updateProfileXpInTransaction(tx, reward.xpAwarded, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({ amount: reward.xpAwarded, source: 'quest', sourceId: questId, description: `Quest completed: ${quest.title}` }).run();
     }
     return true;
@@ -1424,7 +1462,7 @@ export async function deleteLeetCodeTask(taskId: number) {
     const task = tx.select().from(schema.leetcodeTasks).where(eq(schema.leetcodeTasks.id, taskId)).get();
     if (!task) throw new Error('LeetCode task not found');
     if (task.xpAwarded > 0) {
-      updateProfileXpInTransaction(tx, -task.xpAwarded);
+      updateProfileXpInTransaction(tx, -task.xpAwarded, getXpSettingsInTransaction(tx));
       tx.insert(schema.xpTransactions).values({ amount: -task.xpAwarded, source: 'correction', sourceId: taskId, description: `Deleted LeetCode task: ${task.title}` }).run();
     }
     tx.delete(schema.leetcodeTasks).where(eq(schema.leetcodeTasks.id, taskId)).run();
