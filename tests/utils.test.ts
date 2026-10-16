@@ -14,6 +14,7 @@ import { codingTaskXp, nextTaskReviewDate, taskXpForAttempt } from '@/lib/coding
 import { normalizeProjectProgress, projectDurationHours } from '@/lib/project-service';
 import { buildDailyAnalytics, compareMetric, summarizeAnalytics } from '@/lib/analytics';
 import { calculateGoalProgress, goalStatusAfterProgress } from '@/lib/goal-service';
+import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 import { buildDailyJournalDraft } from '@/lib/journal-service';
 import { activityLevel, buildCalendarMonth, calendarWeeks } from '@/lib/calendar';
 import { achievementProgress, isAchievementUnlocked, type AchievementMetrics } from '@/lib/achievement-service';
@@ -234,6 +235,20 @@ describe('goal progress', () => {
     expect(calculateGoalProgress({ ...baseGoal, deadline: null }, 2).forecastWeekly).toBeNull();
     expect(goalStatusAfterProgress('active', 10, 10)).toBe('completed');
     expect(goalStatusAfterProgress('paused', 10, 10)).toBe('paused');
+  });
+});
+
+describe('timezone helpers', () => {
+  it('formats instants in the selected timezone', () => {
+    const instant = new Date('2026-10-12T23:30:00.000Z');
+    expect(dateStringInTimezone(instant, 'Europe/Moscow')).toBe('2026-10-13');
+    expect(dateStringInTimezone(instant, 'America/New_York')).toBe('2026-10-12');
+  });
+
+  it('returns an ordered local-day UTC interval', () => {
+    const bounds = localDayBoundsUtc(new Date('2026-10-12T12:00:00.000Z'), 'Europe/Moscow');
+    expect(bounds.start.getTime()).toBeLessThan(bounds.end.getTime());
+    expect(bounds.end.getTime() - bounds.start.getTime()).toBe(86400000);
   });
 });
 

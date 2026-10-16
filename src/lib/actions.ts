@@ -17,6 +17,7 @@ import { achievementProgress, achievementRules, isAchievementUnlocked, type Achi
 import { isAutoTrackedQuest, isQuestCompletable, questCompletionReward, questProgressPercent, questWindow } from '@/lib/quest-service';
 import { fetchLeetCodeStats, validateLeetCodeUsername } from '@/lib/leetcode-adapter';
 import { fetchGitHubContributionCalendar, fetchGitHubEvents, fetchGitHubProfile, validateGitHubUsername } from '@/lib/github-adapter';
+import { dateStringInTimezone, localDayBoundsUtc } from '@/lib/timezone';
 
 const sessionInputSchema = z.object({
   type: z.enum(['english', 'coding']),
@@ -75,6 +76,11 @@ function refreshDailyStatistics(tx: Parameters<Parameters<typeof db.transaction>
   } else {
     tx.insert(schema.dailyStatistics).values({ date: dateString, ...values }).run();
   }
+}
+
+async function getTimezoneSetting(): Promise<string> {
+  const [setting] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, 'timezone')).limit(1);
+  return setting?.value || 'UTC';
 }
 
 // Initialize default profile if not exists
@@ -320,6 +326,7 @@ export async function getSkillsWithProgress() {
 // Get dashboard statistics
 export async function getDashboardStats() {
   const profile = await getProfile();
+  const timezone = await getTimezoneSetting();
 
   // Get total sessions
   const sessions = await db.select().from(schema.learningSessions);
@@ -346,8 +353,10 @@ export async function getDashboardStats() {
 
   // Calculate streak
   let currentStreak = 0;
-  const today = getDateString();
-  const yesterday = getDateString(new Date(Date.now() - 86400000));
+  const today = dateStringInTimezone(new Date(), timezone);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = dateStringInTimezone(yesterdayDate, timezone);
 
   if (activeDates.length > 0 && (activeDates[0] === today || activeDates[0] === yesterday)) {
     let expectedDate = activeDates[0] === today ? today : yesterday;
@@ -372,6 +381,11 @@ export async function getDashboardStats() {
 
   // Get achievements count
   const achievements = await db.select().from(schema.userAchievements).where(eq(schema.userAchievements.isUnlocked, true));
+  const [dailyGoalSetting] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, 'daily_goal_minutes')).limit(1);
+  const dailyGoalMinutes = Number(dailyGoalSetting?.value || 25);
+  const todayBounds = localDayBoundsUtc(new Date(), timezone);
+  const todaySessions = sessions.filter((session) => session.date >= todayBounds.start && session.date < todayBounds.end);
+  const todayMinutes = todaySessions.reduce((sum, session) => sum + session.durationMinutes, 0);
 
   return {
     profile,
@@ -384,6 +398,10 @@ export async function getDashboardStats() {
     wordsCount: words.length,
     achievementsCount: achievements.length,
     recentSessions,
+    timezone,
+    dailyGoalMinutes,
+    todayMinutes,
+    dailyGoalProgress: Math.min(100, Math.round(todayMinutes / dailyGoalMinutes * 100)),
   };
 }
 
@@ -1001,11 +1019,11 @@ export async function getJournalEntries(search = '') {
 }
 
 export async function getDailyJournalDraft(date = new Date()) {
-  const day = getDateString(date);
-  const localStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const localEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-  const start = Math.floor(localStart.getTime() / 1000);
-  const end = Math.floor(localEnd.getTime() / 1000);
+  const timezone = await getTimezoneSetting();
+  const day = dateStringInTimezone(date, timezone);
+  const bounds = localDayBoundsUtc(date, timezone);
+  const start = Math.floor(bounds.start.getTime() / 1000);
+  const end = Math.floor(bounds.end.getTime() / 1000);
   const sessions = await db.select({
     type: schema.learningSessions.type,
     category: schema.learningSessions.category,
@@ -1062,6 +1080,7 @@ export async function deleteJournalEntry(entryId: number) {
 }
 
 export async function getCalendarSessions() {
+  const timezone = await getTimezoneSetting();
   const start = new Date();
   start.setDate(start.getDate() - 365);
   const rows = await db.select({
@@ -1072,10 +1091,11 @@ export async function getCalendarSessions() {
     topic: schema.learningSessions.topic,
     xpAwarded: schema.learningSessions.xpAwarded,
   }).from(schema.learningSessions).where(gte(schema.learningSessions.date, start)).orderBy(schema.learningSessions.date);
-  return rows.map((row) => ({ ...row, date: getDateString(row.date) }));
+  return rows.map((row) => ({ ...row, date: dateStringInTimezone(row.date, timezone) }));
 }
 
 async function getAchievementMetrics(): Promise<AchievementMetrics> {
+  const timezone = await getTimezoneSetting();
   const [sessions, words, masteredWords, projects, tasks, deepWork] = await Promise.all([
     db.select().from(schema.learningSessions),
     db.select().from(schema.englishWords),
@@ -1087,9 +1107,11 @@ async function getAchievementMetrics(): Promise<AchievementMetrics> {
   const daily = await db.select().from(schema.dailyStatistics).orderBy(desc(schema.dailyStatistics.date));
   const activeDates = daily.filter((row) => row.totalMinutes > 0).map((row) => row.date);
   let currentStreak = 0;
-  let expected = getDateString();
-  const yesterday = getDateString(new Date(Date.now() - 86400000));
-  if (activeDates[0] === getDateString() || activeDates[0] === yesterday) {
+  let expected = dateStringInTimezone(new Date(), timezone);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = dateStringInTimezone(yesterdayDate, timezone);
+  if (activeDates[0] === expected || activeDates[0] === yesterday) {
     expected = activeDates[0];
     for (const date of activeDates) {
       if (date !== expected) break;

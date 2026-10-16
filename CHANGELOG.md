@@ -11,6 +11,7 @@
 ### Fixed
 - macOS diagnostic build job теперь применяет SQLite-схему перед production build, как и основной CI matrix.
 - Настройки профиля: имя, CEFR-уровни, ежедневная цель и IANA timezone.
+- Ежедневная цель теперь отображается на Dashboard, а timezone учитывается в streak, календаре и дневном отчёте.
 
 ## [1.1.3] - 2026-10-16
 

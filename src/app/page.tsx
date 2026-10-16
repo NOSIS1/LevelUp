@@ -127,6 +127,11 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>Цель на сегодня</CardTitle><span className="text-sm text-muted-foreground">{stats.todayMinutes} / {stats.dailyGoalMinutes} мин.</span></CardHeader>
+        <CardContent><Progress value={stats.dailyGoalProgress} /><p className="mt-2 text-xs text-muted-foreground">{stats.dailyGoalProgress}% · Часовой пояс: {stats.timezone}</p></CardContent>
+      </Card>
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
